@@ -14,7 +14,7 @@ type AllFleetId struct {
 func GetAllFleets(w http.ResponseWriter, r *http.Request) {
 	db, err := sql.Open("mysql", SqlConnectionPath)
 	if err != nil {
-		InternalServerError(err, w)
+		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
 	query := `SELECT fleet_id from fleet`
@@ -22,12 +22,12 @@ func GetAllFleets(w http.ResponseWriter, r *http.Request) {
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-			InternalServerError(err, w)
+			HandleError(err, w, http.StatusInternalServerError)
 			return
 		}
 	}(rows)
 	if err != nil {
-		InternalServerError(err, w)
+		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
 	fleetIds := AllFleetId{}
@@ -35,7 +35,7 @@ func GetAllFleets(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		err := rows.Scan(&fleetId)
 		if err != nil {
-			InternalServerError(err, w)
+			HandleError(err, w, http.StatusInternalServerError)
 			return
 		}
 		fleetIds.FleetIds = append(fleetIds.FleetIds, fleetId)
@@ -43,12 +43,12 @@ func GetAllFleets(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	body, err := json.Marshal(fleetIds)
 	if err != nil {
-		InternalServerError(err, w)
+		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
 	_, err = w.Write(body)
 	if err != nil {
-		InternalServerError(err, w)
+		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
 }

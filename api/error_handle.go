@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func InternalServerError(e error, w http.ResponseWriter) {
+func HandleError(e error, w http.ResponseWriter, statusCode int) {
 	log.Println(e.Error())
-	w.WriteHeader(http.StatusInternalServerError)
+	w.WriteHeader(statusCode)
 }

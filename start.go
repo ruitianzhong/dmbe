@@ -19,7 +19,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", api.AddDrivers)
 	r.HandleFunc("/api/fleets/get-all-fleets", api.GetAllFleets).Methods("get")
-
+	r.HandleFunc("/api/drivers/add-drivers", api.AddDrivers).Methods("post")
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
