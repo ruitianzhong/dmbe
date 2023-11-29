@@ -1,1 +1,3 @@
 .idea
+# prevent the leak of sensitive data
+config.yaml

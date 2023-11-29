@@ -1,9 +1,28 @@
 package main
 
 import (
+	"dmbe/api"
+	"dmbe/authentication"
 	"dmbe/config"
+	"github.com/gorilla/mux"
+	"log"
+	"net/http"
 )
 
+var GlobalConfig *config.Config
+
 func main() {
-	config.InitConfig()
+	GlobalConfig = config.InitConfig()
+	api.SqlInit(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
+		GlobalConfig.Db.DbName, GlobalConfig.Db.Username,
+		GlobalConfig.Db.Password)
+	r := mux.NewRouter()
+	r.HandleFunc("/", api.AddDrivers)
+	r.HandleFunc("/api/fleets/get-all-fleets", api.GetAllFleets).Methods("get")
+
+	r.Use(authentication.AuthMiddleware)
+	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }

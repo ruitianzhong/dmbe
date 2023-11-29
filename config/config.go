@@ -6,23 +6,24 @@ import (
 	"log"
 )
 
-var config *Config
-
 type Config struct {
 	App *App `yaml:"app"`
 	Db  *Db  `yaml:"db"`
 }
 type App struct {
 	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
+	Port string `yaml:"port"`
 }
 type Db struct {
 	Password string `yaml:"password"`
 	DbName   string `yaml:"dbname"`
 	Username string `yaml:"username"`
+	Port     string `yaml:"port"`
+	Address  string `yaml:"address"`
 }
 
-func InitConfig() {
+func InitConfig() *Config {
+	var config *Config
 	yamlFile, err := ioutil.ReadFile("./config.yaml")
 	if err != nil {
 		log.Fatal("failed to read config.yaml")
@@ -31,5 +32,5 @@ func InitConfig() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
+	return config
 }
