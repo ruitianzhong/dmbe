@@ -1,0 +1,7 @@
+app:
+  host: 127.0.0.1
+  port: 8080
+db:
+  username: your username
+  password: your password
+  dbname: your dbname
