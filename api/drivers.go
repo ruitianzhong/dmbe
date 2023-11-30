@@ -23,7 +23,6 @@ path: /api/drivers/add-drivers
 params: driver_id,gender,fleet_id,year,name
 return: code,msg etc
 */
-
 func AddDrivers(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
@@ -46,7 +45,7 @@ func AddDrivers(w http.ResponseWriter, r *http.Request) {
 	if adf.Gender == "male" {
 		gender = 1
 	}
-	query := `INSERT INTO driver (driver_id, name, year,sex,fleet_id,position,passwd) VALUES (?, ?, ?,?,?,?,?,?)`
+	query := `INSERT INTO driver (driver_id, name, year,sex,fleet_id,position,passwd) VALUES (?,?,?,?,?,?,?)`
 	_, err = db.Exec(query, adf.DriverId, adf.Name, adf.Year, gender, adf.FleetId, 0, "123456")
 	// just temporary
 	m := ResponseMsg{}
