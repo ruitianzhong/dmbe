@@ -2,6 +2,8 @@ package api
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"net/http"
 )
@@ -83,7 +85,7 @@ type LineInfo struct {
 
 // GetAllLineInfo /api/line/get-all-line-info
 func GetAllLineInfo(w http.ResponseWriter, r *http.Request) {
-	s := `SELECT line.line_id,line.fleet_id FROM line left join (SELECT line_id,driver_id from driver_line where position=1) as captain on captain.line_id=line.line_id`
+	s := `SELECT line.line_id,line.fleet_id,captain.driver_id FROM line left join (SELECT line_id,driver_id from driver_line where position=1) as captain on captain.line_id=line.line_id`
 	db, err := sql.Open(DriverName, SqlConnectionPath)
 	rows, err := db.Query(s)
 	defer func(rows *sql.Rows) {
@@ -100,7 +102,11 @@ func GetAllLineInfo(w http.ResponseWriter, r *http.Request) {
 	var info LineInfo
 	var all AllLinesInfo
 	for rows.Next() {
-		err := rows.Scan(&info.LineId, &info.LineFleetId, &info.LineCaptain)
+		ns := sql.NullString{}
+		err := rows.Scan(&info.LineId, &info.LineFleetId, &ns)
+		if ns.Valid {
+			info.LineCaptain = ns.String
+		}
 		if err != nil {
 			HandleError(err, w, http.StatusInternalServerError)
 			return
@@ -112,11 +118,12 @@ func GetAllLineInfo(w http.ResponseWriter, r *http.Request) {
 
 type StopByLineId struct {
 	StopIds []string `json:"stop_ids"`
+	Code    string   `json:"code"`
 }
 
 // GetStopsByLineId /api/line/get-stops-by-line-id
 func GetStopsByLineId(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Has("line_id") {
+	if !r.URL.Query().Has("line_id") {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -126,8 +133,12 @@ func GetStopsByLineId(w http.ResponseWriter, r *http.Request) {
 		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
-	s := `SELECT stop_id from line_stop where id=? ORDER BY  stop_order ASC `
+	s := `SELECT stop_id from line_stop where line_id=? ORDER BY  stop_order ASC `
 	rows, err := db.Query(s, lineId)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
@@ -135,10 +146,6 @@ func GetStopsByLineId(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}(rows)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
 	var stopId string
 	var stopIds StopByLineId
 	for rows.Next() {
@@ -153,24 +160,39 @@ func GetStopsByLineId(w http.ResponseWriter, r *http.Request) {
 		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
+	if len(stopIds.StopIds) == 0 {
+		stopIds.Code = "100"
+	} else {
+		stopIds.Code = "200"
+	}
 	WriteJson(w, stopIds)
 
 }
 
 type AddNewLineForm struct {
-	LineId  string   `schema:"line_id,required"`
-	FleetId string   `schema:"fleet_id,required"`
-	StopIds []string `schema:"stop_ids,required"`
+	LineId  string   `json:"line_id,required"`
+	FleetId string   `json:"fleet_id,required"`
+	StopIds []string `json:"stop_ids,required"`
 }
 
 // AddNewLine /api/line/add-new-line
+/*
+@method post
+@param line_id,fleet_id,stop_ids
+*/
 func AddNewLine(w http.ResponseWriter, r *http.Request) {
+	l := r.ContentLength
+	body := make([]byte, l)
+	_, _ = r.Body.Read(body)
+	fmt.Println(string(body))
 	var anf AddNewLineForm
-	if DecodePostForm(&anf, r, w) {
+	err := json.Unmarshal(body, &anf)
+	if err != nil {
+		HandleError(err, w, http.StatusBadRequest)
 		return
 	}
 	msg := ResponseMsg{}
-	if len(anf.StopIds) < 5 {
+	if len(anf.StopIds) < 2 {
 		msg.Code = "100"
 		msg.Msg = "站点数量过少"
 		WriteJson(w, msg)
