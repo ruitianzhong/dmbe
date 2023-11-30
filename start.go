@@ -25,6 +25,7 @@ func main() {
 	r.HandleFunc("/api/line/get-stops-by-line-id", api.GetStopsByLineId).Methods("get")
 	r.HandleFunc("/api/line/get-all-line-info", api.GetAllLineInfo).Methods("get")
 	r.HandleFunc("/api/line/add-new-line", api.AddNewLine).Methods("post")
+	r.HandleFunc("/api/violation/types", api.GetAllViolationTypes).Methods("get")
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
