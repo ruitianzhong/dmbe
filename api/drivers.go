@@ -2,7 +2,7 @@ package api
 
 import (
 	"database/sql"
-	"encoding/json"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/schema"
 	"net/http"
 )
@@ -24,16 +24,8 @@ params: driver_id,gender,fleet_id,year,name
 return: code,msg etc
 */
 func AddDrivers(w http.ResponseWriter, r *http.Request) {
-
-	err := r.ParseForm()
-	if err != nil {
-		HandleError(err, w, http.StatusBadRequest)
-		return
-	}
 	var adf AddDriversForm
-	err = decoder.Decode(&adf, r.PostForm)
-	if err != nil {
-		HandleError(err, w, http.StatusBadRequest)
+	if DecodePostForm(&adf, r, w) {
 		return
 	}
 	db, err := sql.Open("mysql", SqlConnectionPath)
@@ -55,17 +47,7 @@ func AddDrivers(w http.ResponseWriter, r *http.Request) {
 	} else {
 		m.Code = "200"
 	}
-	marshal, err := json.Marshal(m)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
-	_, err = w.Write(marshal)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
-
+	WriteJson(w, m)
 }
 
 func validateAddDriverForm(form AddDriversForm) (bool, string) {
