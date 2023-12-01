@@ -117,17 +117,68 @@ func GetAllDriverInfo(w http.ResponseWriter, r *http.Request) {
 	WriteJson(w, all)
 }
 
-type FleetCaptainInfo struct {
-}
-type LineCaptainInfo struct {
+type CaptainInfo struct {
+	DriverId string `json:"driver_id"`
+	Name     string `json:"name"`
+	Code     string `json:"code"`
 }
 
 // GetFleetCaptainByDriverId /api/driver/get-fleet-captain-by-driver-id
 func GetFleetCaptainByDriverId(w http.ResponseWriter, r *http.Request) {
+	ok, driverId := getDriverIdFromURL(w, r)
+	if !ok {
+		return
+	}
+	db, err := sql.Open(DriverName, SqlConnectionPath)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	info := CaptainInfo{}
+	s1 := `SELECT driver_id,name from driver where fleet_id=(SELECT fleet_id from driver where driver_id=?) AND position=1`
+	err = db.QueryRow(s1, driverId).Scan(&info.DriverId, &info.Name)
+	if err != nil {
+		HandleError(err, w, http.StatusOK)
+		info.Code = "100"
+	} else {
+		info.Code = "200"
+	}
+	WriteJson(w, info)
 
 }
 
 // GetLineCaptainByDriverId  /api/driver/get-line-captain-by-driver-id
 func GetLineCaptainByDriverId(w http.ResponseWriter, r *http.Request) {
+	ok, driverId := getDriverIdFromURL(w, r)
+	if !ok {
+		return
+	}
+	db, err := sql.Open(DriverName, SqlConnectionPath)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	info := CaptainInfo{}
+	s1 := `SELECT driver.driver_id,driver.name from driver 
+        where driver.driver_id=(SELECT driver_line.driver_id from driver_line where driver_line.position=1 
+        AND line_id=(SELECT line_id from driver_line where driver_id=?))`
+	err = db.QueryRow(s1, driverId).Scan(&info.DriverId, &info.Name)
+	if err != nil {
+		HandleError(err, w, http.StatusOK)
+		info.Code = "100"
+	} else {
+		info.Code = "200"
+	}
+	WriteJson(w, info)
+}
 
+func getDriverIdFromURL(w http.ResponseWriter, r *http.Request) (bool, string) {
+	var driverId string
+	if r.URL.Query().Has("driver_id") {
+		driverId = r.URL.Query().Get("driver_id")
+		return true, driverId
+	} else {
+		w.WriteHeader(http.StatusBadRequest)
+		return false, ""
+	}
 }

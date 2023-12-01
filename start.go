@@ -29,6 +29,8 @@ func main() {
 	r.HandleFunc("/api/violation/types", api.GetAllViolationTypes).Methods("get")
 	r.HandleFunc("/api/bus/get-all-bus", api.GetAllBus).Methods("get")
 	r.HandleFunc("/api/bus/add-one-bus", api.AddOneBus).Methods("post")
+	r.HandleFunc("/api/driver/get-fleet-captain-by-driver-id", api.GetFleetCaptainByDriverId).Methods("get")
+	r.HandleFunc("/driver/get-line-captain-by-driver-id", api.GetLineCaptainByDriverId).Methods("get")
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
