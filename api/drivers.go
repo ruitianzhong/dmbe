@@ -124,6 +124,7 @@ type CaptainInfo struct {
 }
 
 // GetFleetCaptainByDriverId /api/driver/get-fleet-captain-by-driver-id
+// TODO: testing is needed
 func GetFleetCaptainByDriverId(w http.ResponseWriter, r *http.Request) {
 	ok, driverId := getDriverIdFromURL(w, r)
 	if !ok {
@@ -148,6 +149,7 @@ func GetFleetCaptainByDriverId(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetLineCaptainByDriverId  /api/driver/get-line-captain-by-driver-id
+// TODO:Testing is needed
 func GetLineCaptainByDriverId(w http.ResponseWriter, r *http.Request) {
 	ok, driverId := getDriverIdFromURL(w, r)
 	if !ok {
@@ -181,4 +183,111 @@ func getDriverIdFromURL(w http.ResponseWriter, r *http.Request) (bool, string) {
 		w.WriteHeader(http.StatusBadRequest)
 		return false, ""
 	}
+}
+
+type ModifyDriverForm struct {
+	Year     int    `schema:"year,required"`
+	FleetId  string `schema:"fleet_id,required"`
+	LineId   string `schema:"line_id,required"`
+	Gender   string `schema:"gender,required"`
+	DriverId string `schema:"driver_id,required"`
+	Name     string `schema:"name,required"`
+}
+
+// ModifyDriverInfo /api/driver/modify-driver-info
+func ModifyDriverInfo(w http.ResponseWriter, r *http.Request) {
+	var mdf ModifyDriverForm
+	if DecodePostForm(&mdf, r, w) {
+		return
+	}
+	db, err := sql.Open(DriverName, SqlConnectionPath)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	var gender int
+	if mdf.Gender == "male" {
+		gender = 1
+	}
+	msg := ResponseMsg{}
+	s1 := `UPDATE driver set year=?,fleet_id=?,line_id=?,gender=?,name=? where driver_id=?`
+	result, err := tx.Exec(s1, mdf.Year, mdf.FleetId, mdf.LineId, gender, mdf.Name, mdf.DriverId)
+	if err != nil {
+		msg.Code = "100"
+		msg.Msg = err.Error()
+		WriteJson(w, msg)
+		_ = tx.Rollback()
+		return
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		msg.Code = "100"
+		msg.Msg = err.Error()
+		WriteJson(w, msg)
+		_ = tx.Rollback()
+		return
+	} else if n == 0 {
+		msg.Code = "100"
+		msg.Msg = "不存在该用户"
+		WriteJson(w, msg)
+		_ = tx.Rollback()
+		return
+	}
+
+	s2 := `SELECT fleet_id from line where line_id=? AND fleet_id=?`
+	rows, err := tx.Query(s2, mdf.LineId, mdf.FleetId)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		_ = tx.Rollback()
+		return
+	} else if !rows.Next() {
+		msg.Code = "100"
+		msg.Msg = "路线和车队不一致"
+		_ = tx.Rollback()
+		WriteJson(w, msg)
+		return
+	}
+	s3 := `UPDATE driver_line set line_id=? where driver_id=?`
+	exec, err := tx.Exec(s3, mdf.LineId, mdf.DriverId)
+	if err != nil {
+		_ = tx.Rollback()
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	n, err = exec.RowsAffected()
+	if err != nil {
+		_ = tx.Rollback()
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	if n > 0 {
+		msg.Code = "200"
+		_ = tx.Commit()
+		WriteJson(w, msg)
+		return
+	}
+	s4 := `INSERT INTO driver_line (driver_id,line_id,position) values (?,?,?)`
+	_, err = tx.Exec(s4, mdf.DriverId, mdf.LineId, 0)
+	if err != nil {
+		_ = tx.Rollback()
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	err = tx.Commit()
+	if err != nil {
+		msg.Code = "100"
+		msg.Msg = "Failed to commit " + err.Error()
+	} else {
+		msg.Code = "200"
+	}
+	WriteJson(w, msg)
+
 }
