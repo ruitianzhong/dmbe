@@ -20,6 +20,7 @@ func main() {
 	r.HandleFunc("/", api.AddDrivers)
 	r.HandleFunc("/api/fleets/get-all-fleets", api.GetAllFleets).Methods("get")
 	r.HandleFunc("/api/drivers/add-drivers", api.AddDrivers).Methods("post")
+	r.HandleFunc("/api/driver/get-all-driver-info", api.GetAllDriverInfo).Methods("get")
 	r.HandleFunc("/api/line/get-all-stops", api.GetAllStops).Methods("get")
 	r.HandleFunc("/api/line/add-stop", api.AddStop).Methods("post")
 	r.HandleFunc("/api/line/get-stops-by-line-id", api.GetStopsByLineId).Methods("get")
