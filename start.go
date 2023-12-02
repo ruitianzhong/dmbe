@@ -34,6 +34,8 @@ func main() {
 	r.HandleFunc("/auth/login", authentication.Login).Methods("post")
 	r.HandleFunc("/auth/logout", authentication.Logout).Methods("post")
 	r.HandleFunc("/api/violation/add-violation", api.AddViolation).Methods("post")
+	r.HandleFunc("/api/violation/violation-by-time-range-driver-id", api.ViolationByTimeRangeAndDriverID).Methods("get")
+	r.HandleFunc("/api/violation/violation-stat-by-time-range-and-fleet-id", api.ViolationStatByTimeRange).Methods("get")
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
