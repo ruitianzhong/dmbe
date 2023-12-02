@@ -1,6 +1,7 @@
 package authentication
 
 import (
+	"log"
 	"net/http"
 )
 
@@ -9,11 +10,16 @@ func AuthMiddleware(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			token := r.Header.Get("X-Session-Token")
-			if token != "42" {
+			if r.URL.Path != "/auth/login" {
+				session, _ := store.Get(r, "dm-session")
+				if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+					log.Println("reject")
+				} else {
+					log.Println("authenticated", auth)
+				}
 				next.ServeHTTP(w, r)
 			} else {
-				http.Error(w, "Forbidden", http.StatusForbidden)
+				next.ServeHTTP(w, r)
 			}
 		})
 

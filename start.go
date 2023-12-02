@@ -13,9 +13,7 @@ var GlobalConfig *config.Config
 
 func main() {
 	GlobalConfig = config.InitConfig()
-	api.SqlInit(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
-		GlobalConfig.Db.DbName, GlobalConfig.Db.Username,
-		GlobalConfig.Db.Password)
+	initDb()
 	authentication.InitAuthentication(GlobalConfig.Auth.SessionKey)
 	r := mux.NewRouter()
 	r.HandleFunc("/", api.AddDrivers)
@@ -33,9 +31,19 @@ func main() {
 	r.HandleFunc("/api/driver/get-fleet-captain-by-driver-id", api.GetFleetCaptainByDriverId).Methods("get")
 	r.HandleFunc("/api/driver/get-line-captain-by-driver-id", api.GetLineCaptainByDriverId).Methods("get")
 	r.HandleFunc("/api/driver/modify-driver-info", api.ModifyDriverInfo).Methods("post")
+	r.HandleFunc("/auth/login", authentication.Login).Methods("post")
+	r.HandleFunc("/auth/logout", authentication.Logout).Methods("post")
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+}
+func initDb() {
+	api.SqlInit(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
+		GlobalConfig.Db.DbName, GlobalConfig.Db.Username,
+		GlobalConfig.Db.Password)
+	authentication.SqlInit(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
+		GlobalConfig.Db.DbName, GlobalConfig.Db.Username,
+		GlobalConfig.Db.Password)
 }
