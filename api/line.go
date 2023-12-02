@@ -13,7 +13,7 @@ type AllStopsId struct {
 }
 
 // GetAllStops /api/line/get-all-stops
-func GetAllStops(w http.ResponseWriter, r *http.Request) {
+func GetAllStops(w http.ResponseWriter, _ *http.Request) {
 
 	db, err := sql.Open("mysql", SqlConnectionPath)
 	if err != nil {
@@ -84,7 +84,7 @@ type LineInfo struct {
 }
 
 // GetAllLineInfo /api/line/get-all-line-info
-func GetAllLineInfo(w http.ResponseWriter, r *http.Request) {
+func GetAllLineInfo(w http.ResponseWriter, _ *http.Request) {
 	s := `SELECT line.line_id,line.fleet_id,captain.driver_id FROM line left join (SELECT line_id,driver_id from driver_line where position=1) as captain on captain.line_id=line.line_id`
 	db, err := sql.Open(DriverName, SqlConnectionPath)
 	rows, err := db.Query(s)
@@ -239,6 +239,105 @@ func AddNewLine(w http.ResponseWriter, r *http.Request) {
 		msg.Msg = "提交时发生错误，请重试:" + err.Error()
 	} else {
 		msg.Code = "200"
+	}
+	WriteJson(w, msg)
+}
+
+type LineMember struct {
+	DriverId string `json:"driver_id"`
+	Name     string `json:"name"`
+}
+
+type LineMemberReply struct {
+	Members    []LineMember `json:"members"`
+	Captain    LineMember   `json:"captain"`
+	HasCaptain bool         `json:"has_captain"`
+}
+
+// GetLineMembersByLineId  /api/line/get-line-captain-by-line-id
+func GetLineMembersByLineId(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	if !query.Has("line_id") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	db, err := sql.Open(DriverName, SqlConnectionPath)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+
+	lineId := query.Get("line_id")
+	s := "SELECT driver.name,driver_line.driver_id,driver_line.position from driver_line inner join driver on driver.driver_id=driver_line.driver_id where driver_line.line_id=?"
+	rows, err := db.Query(s, lineId)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+	member := LineMember{}
+	reply := LineMemberReply{}
+	var position int
+	for rows.Next() {
+		err = rows.Scan(&member.Name, &member.DriverId, &position)
+		if err != nil {
+			HandleError(err, w, http.StatusInternalServerError)
+			return
+		}
+		reply.Members = append(reply.Members, member)
+		if position == 1 {
+			reply.Captain = member
+			reply.HasCaptain = true
+		}
+	}
+	WriteJson(w, reply)
+}
+
+type SetLineCaptainForm struct {
+	LineId   string `schema:"line_id,required"`
+	DriverId string `schema:"driver_id,required"`
+}
+
+// SetLineCaptain /api/line/set-line-captain
+func SetLineCaptain(w http.ResponseWriter, r *http.Request) {
+	scf := SetLineCaptainForm{}
+	if DecodePostForm(&scf, r, w) {
+		return
+	}
+	db, err := sql.Open(DriverName, SqlConnectionPath)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	tx, err := db.Begin()
+	if err != nil {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+
+	s1 := `UPDATE driver_line set position=0 where line_id=? AND position=1`
+	s2 := `UPDATE driver_line set position=1 where line_id=? AND driver_id=?`
+	_, err = tx.Exec(s1, scf.LineId)
+	if err != nil {
+		_ = tx.Rollback()
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	_, err = tx.Exec(s2, scf.LineId, scf.DriverId)
+	if err != nil {
+		_ = tx.Rollback()
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	msg := ResponseMsg{Code: "200"}
+	if err = tx.Commit(); err != nil {
+		msg.Code = "200"
+		msg.Msg = err.Error()
 	}
 	WriteJson(w, msg)
 }
