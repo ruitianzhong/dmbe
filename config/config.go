@@ -7,8 +7,9 @@ import (
 )
 
 type Config struct {
-	App *App `yaml:"app"`
-	Db  *Db  `yaml:"db"`
+	App  *App  `yaml:"app"`
+	Db   *Db   `yaml:"db"`
+	Auth *Auth `yaml:"auth"`
 }
 type App struct {
 	Host string `yaml:"host"`
@@ -20,6 +21,9 @@ type Db struct {
 	Username string `yaml:"username"`
 	Port     string `yaml:"port"`
 	Address  string `yaml:"address"`
+}
+type Auth struct {
+	SessionKey string `yaml:"session_key"`
 }
 
 func InitConfig() *Config {

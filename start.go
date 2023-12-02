@@ -16,6 +16,7 @@ func main() {
 	api.SqlInit(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
 		GlobalConfig.Db.DbName, GlobalConfig.Db.Username,
 		GlobalConfig.Db.Password)
+	authentication.InitAuthentication(GlobalConfig.Auth.SessionKey)
 	r := mux.NewRouter()
 	r.HandleFunc("/", api.AddDrivers)
 	r.HandleFunc("/api/fleets/get-all-fleets", api.GetAllFleets).Methods("get")

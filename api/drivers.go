@@ -218,8 +218,8 @@ func ModifyDriverInfo(w http.ResponseWriter, r *http.Request) {
 		gender = 1
 	}
 	msg := ResponseMsg{}
-	s1 := `UPDATE driver set year=?,fleet_id=?,line_id=?,gender=?,name=? where driver_id=?`
-	result, err := tx.Exec(s1, mdf.Year, mdf.FleetId, mdf.LineId, gender, mdf.Name, mdf.DriverId)
+	s1 := `UPDATE driver set year=?,fleet_id=?,sex=?,name=? where driver_id=?`
+	result, err := tx.Exec(s1, mdf.Year, mdf.FleetId, gender, mdf.Name, mdf.DriverId)
 	if err != nil {
 		msg.Code = "100"
 		msg.Msg = err.Error()
@@ -251,26 +251,38 @@ func ModifyDriverInfo(w http.ResponseWriter, r *http.Request) {
 	} else if !rows.Next() {
 		msg.Code = "100"
 		msg.Msg = "路线和车队不一致"
+		_ = rows.Close()
 		_ = tx.Rollback()
 		WriteJson(w, msg)
 		return
 	}
-	s3 := `UPDATE driver_line set line_id=? where driver_id=?`
-	exec, err := tx.Exec(s3, mdf.LineId, mdf.DriverId)
+	_ = rows.Close()
+
+	s5 := `SELECT driver_id from driver_line where driver_id=?`
+	rows, err = tx.Query(s5, mdf.DriverId)
 	if err != nil {
-		_ = tx.Rollback()
 		HandleError(err, w, http.StatusInternalServerError)
+		_ = tx.Rollback()
 		return
 	}
-	n, err = exec.RowsAffected()
-	if err != nil {
-		_ = tx.Rollback()
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
-	if n > 0 {
-		msg.Code = "200"
-		_ = tx.Commit()
+	_ = rows.Close()
+	if !rows.Next() {
+		s3 := `UPDATE driver_line set line_id=? where driver_id=?`
+		_, err := tx.Exec(s3, mdf.LineId, mdf.DriverId)
+		if err != nil {
+			_ = tx.Rollback()
+			HandleError(err, w, http.StatusInternalServerError)
+			return
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			msg.Code = "100"
+			msg.Msg = "提交失败"
+		} else {
+			msg.Code = "200"
+
+		}
 		WriteJson(w, msg)
 		return
 	}

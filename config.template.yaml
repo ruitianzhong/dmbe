@@ -7,3 +7,5 @@ db:
   dbname: temp
   address: localhost
   port: 3306
+auth:
+  session_key: your session key
