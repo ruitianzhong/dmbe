@@ -33,6 +33,7 @@ func main() {
 	r.HandleFunc("/api/driver/modify-driver-info", api.ModifyDriverInfo).Methods("post")
 	r.HandleFunc("/auth/login", authentication.Login).Methods("post")
 	r.HandleFunc("/auth/logout", authentication.Logout).Methods("post")
+	r.HandleFunc("/api/violation/add-violation", api.AddViolation).Methods("post")
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {

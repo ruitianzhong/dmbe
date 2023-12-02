@@ -59,7 +59,7 @@ CREATE TABLE IF NOT EXISTS violation_type
 
 CREATE TABLE IF NOT EXISTS violation_record
 (
-    violation_id      int primary key,
+    violation_id      int primary key AUTO_INCREMENT,
     violation_type_id varchar(20) NOT NULL,
     time              int         NOT NULL,
     driver_id         varchar(10) NOT NULL,
