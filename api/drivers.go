@@ -219,24 +219,10 @@ func ModifyDriverInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	msg := ResponseMsg{}
 	s1 := `UPDATE driver set year=?,fleet_id=?,sex=?,name=? where driver_id=?`
-	result, err := tx.Exec(s1, mdf.Year, mdf.FleetId, gender, mdf.Name, mdf.DriverId)
+	_, err = tx.Exec(s1, mdf.Year, mdf.FleetId, gender, mdf.Name, mdf.DriverId)
 	if err != nil {
 		msg.Code = "100"
 		msg.Msg = err.Error()
-		WriteJson(w, msg)
-		_ = tx.Rollback()
-		return
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		msg.Code = "100"
-		msg.Msg = err.Error()
-		WriteJson(w, msg)
-		_ = tx.Rollback()
-		return
-	} else if n == 0 {
-		msg.Code = "100"
-		msg.Msg = "不存在该用户"
 		WriteJson(w, msg)
 		_ = tx.Rollback()
 		return
@@ -259,14 +245,10 @@ func ModifyDriverInfo(w http.ResponseWriter, r *http.Request) {
 	_ = rows.Close()
 
 	s5 := `SELECT driver_id from driver_line where driver_id=?`
-	rows, err = tx.Query(s5, mdf.DriverId)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		_ = tx.Rollback()
-		return
-	}
-	_ = rows.Close()
-	if !rows.Next() {
+	var temp string
+	err = tx.QueryRow(s5, mdf.DriverId).Scan(&temp)
+
+	if err == nil {
 		s3 := `UPDATE driver_line set line_id=? where driver_id=?`
 		_, err := tx.Exec(s3, mdf.LineId, mdf.DriverId)
 		if err != nil {

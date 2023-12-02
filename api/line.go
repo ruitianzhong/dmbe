@@ -319,9 +319,20 @@ func SetLineCaptain(w http.ResponseWriter, r *http.Request) {
 		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
-
+	msg := ResponseMsg{Code: "200"}
 	s1 := `UPDATE driver_line set position=0 where line_id=? AND position=1`
 	s2 := `UPDATE driver_line set position=1 where line_id=? AND driver_id=?`
+	s3 := `SELECT line_id from driver_line where driver_id=?`
+	var actualLineId string
+	err = tx.QueryRow(s3, scf.DriverId).Scan(&actualLineId)
+	if err != nil || actualLineId != scf.LineId {
+		msg.Code = "100"
+		msg.Msg = "司机不在所选路线当中"
+		_ = tx.Rollback()
+		WriteJson(w, msg)
+		return
+	}
+
 	_, err = tx.Exec(s1, scf.LineId)
 	if err != nil {
 		_ = tx.Rollback()
@@ -334,7 +345,7 @@ func SetLineCaptain(w http.ResponseWriter, r *http.Request) {
 		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
-	msg := ResponseMsg{Code: "200"}
+
 	if err = tx.Commit(); err != nil {
 		msg.Code = "200"
 		msg.Msg = err.Error()

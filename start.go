@@ -36,8 +36,10 @@ func main() {
 	r.HandleFunc("/api/violation/add-violation", api.AddViolation).Methods("post")
 	r.HandleFunc("/api/violation/violation-by-time-range-driver-id", api.ViolationByTimeRangeAndDriverID).Methods("get")
 	r.HandleFunc("/api/violation/violation-stat-by-time-range-and-fleet-id", api.ViolationStatByTimeRange).Methods("get")
-	r.HandleFunc("/api/line/get-line-captain-by-line-id", api.GetLineMembersByLineId).Methods("post")
+	r.HandleFunc("/api/line/get-line-captain-by-line-id", api.GetLineMembersByLineId).Methods("get")
 	r.HandleFunc("/api/line/set-line-captain", api.SetLineCaptain).Methods("post")
+	r.HandleFunc("/api/line/set-fleet-captain", api.SetFleetCaptain).Methods("post")
+	r.HandleFunc("/api/fleet/get-fleet-members", api.GetFleetLineMembersByFleetId).Methods("get")
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
