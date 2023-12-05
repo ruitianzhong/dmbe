@@ -118,11 +118,12 @@ func GetAllLineInfo(w http.ResponseWriter, _ *http.Request) {
 
 type StopByLineId struct {
 	StopIds []string `json:"stop_ids"`
+	BusIds  []string `json:"bus_ids"`
 	Code    string   `json:"code"`
 }
 
-// GetStopsByLineId /api/line/get-stops-by-line-id
-func GetStopsByLineId(w http.ResponseWriter, r *http.Request) {
+// GetStopsAndBusByLineId /api/line/get-stops-by-line-id
+func GetStopsAndBusByLineId(w http.ResponseWriter, r *http.Request) {
 	if !r.URL.Query().Has("line_id") {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -133,10 +134,20 @@ func GetStopsByLineId(w http.ResponseWriter, r *http.Request) {
 		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
-	s := `SELECT stop_id from line_stop where line_id=? ORDER BY  stop_order ASC `
-	rows, err := db.Query(s, lineId)
+	tx, err := db.Begin()
+	if err != nil {
+		if tx != nil {
+			_ = tx.Rollback()
+		}
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	s1 := `SELECT stop_id from line_stop where line_id=? ORDER BY  stop_order ASC `
+	s2 := `SELECT bus_id from bus where line_id=?`
+	rows, err := tx.Query(s1, lineId)
 	if err != nil {
 		HandleError(err, w, http.StatusInternalServerError)
+		_ = tx.Rollback()
 		return
 	}
 	defer func(rows *sql.Rows) {
@@ -152,15 +163,37 @@ func GetStopsByLineId(w http.ResponseWriter, r *http.Request) {
 		err = rows.Scan(&stopId)
 		if err != nil {
 			HandleError(err, w, http.StatusInternalServerError)
+			_ = tx.Rollback()
 			return
 		}
 		stopIds.StopIds = append(stopIds.StopIds, stopId)
 	}
 	if err = rows.Err(); err != nil {
 		HandleError(err, w, http.StatusInternalServerError)
+		_ = tx.Rollback()
 		return
 	}
-	if len(stopIds.StopIds) == 0 {
+	rows2, err := tx.Query(s2, lineId)
+	if err != nil {
+		_ = tx.Rollback()
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	defer func(rows2 *sql.Rows) {
+		_ = rows2.Close()
+	}(rows2)
+	var busId string
+	for rows2.Next() {
+		if err = rows2.Scan(&busId); err != nil {
+			_ = tx.Rollback()
+			HandleError(err, w, http.StatusInternalServerError)
+			return
+		}
+		stopIds.BusIds = append(stopIds.BusIds, busId)
+	}
+	err = tx.Commit()
+
+	if len(stopIds.StopIds) == 0 || err != nil {
 		stopIds.Code = "100"
 	} else {
 		stopIds.Code = "200"

@@ -96,9 +96,9 @@ func GetAllDriverInfo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if gender == 1 {
-			info.Gender = "male"
+			info.Gender = "男"
 		} else {
-			info.Gender = "female"
+			info.Gender = "女"
 		}
 		switch position {
 		case 0:

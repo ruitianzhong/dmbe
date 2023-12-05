@@ -8,7 +8,7 @@ import (
 type BusInfo struct {
 	BusId   string `json:"bus_id" schema:"bus_id,required"`
 	LineId  string `json:"line_id" schema:"line_id,required"`
-	FleetId string `json:"fleet_id" schema:"fleet_id,required"`
+	FleetId string `json:"fleet_id" schema:"fleet_id"`
 }
 
 type AllBusInfo struct {
@@ -60,7 +60,7 @@ func AddOneBus(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Exec(s, info.BusId, info.LineId)
 	m := ResponseMsg{}
 	if err != nil {
-		m.Msg = "插入失败,请重试"
+		m.Msg = "插入失败,请检查车辆是否已经存在"
 		m.Code = "100"
 	} else {
 		m.Code = "200"
