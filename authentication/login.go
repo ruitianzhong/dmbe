@@ -5,7 +5,6 @@
 package authentication
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gorilla/schema"
 	"net/http"
@@ -37,11 +36,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		HandleError(err, w, http.StatusBadRequest)
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	s := "SELECT passwd from driver where driver_id=?"
 	lr := LoginResponse{}
 	var passwd string

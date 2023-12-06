@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"dmbe/api"
 	"dmbe/authentication"
 	"dmbe/config"
@@ -46,10 +47,23 @@ func main() {
 	}
 }
 func initDb() {
-	api.SqlInit(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
+
+	driverName, path := ConnectionDriverAndPath(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
 		GlobalConfig.Db.DbName, GlobalConfig.Db.Username,
 		GlobalConfig.Db.Password)
-	authentication.SqlInit(GlobalConfig.Db.Address, GlobalConfig.Db.Port,
-		GlobalConfig.Db.DbName, GlobalConfig.Db.Username,
-		GlobalConfig.Db.Password)
+
+	DB, err := sql.Open(driverName, path)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	api.SqlInit(DB)
+	authentication.SqlInit(DB)
+}
+
+func ConnectionDriverAndPath(address, port, dbName, username, password string) (driverName string, connectionPath string) {
+	sqlConnectionPath := username + ":" + password + "@(" + address + ":" + port + ")/" + dbName + "?parseTime=true"
+	driverName = "mysql"
+	return driverName, sqlConnectionPath
+
 }

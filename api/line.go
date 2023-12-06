@@ -15,11 +15,7 @@ type AllStopsId struct {
 // GetAllStops /api/line/get-all-stops
 func GetAllStops(w http.ResponseWriter, _ *http.Request) {
 
-	db, err := sql.Open("mysql", SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	query := `SELECT stop_id from stop`
 	rows, err := db.Query(query)
 	defer func(rows *sql.Rows) {
@@ -56,14 +52,10 @@ func AddStop(w http.ResponseWriter, r *http.Request) {
 	if DecodePostForm(&asf, r, w) {
 		return
 	}
-	db, err := sql.Open("mysql", SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusBadRequest)
-		return
-	}
+	db := DB
 	s := `insert into stop (stop_id) values(?)`
 	var msg ResponseMsg
-	_, err = db.Exec(s, asf.StopId)
+	_, err := db.Exec(s, asf.StopId)
 	if err != nil {
 		msg.Code = "100"
 		msg.Msg = err.Error()
@@ -86,7 +78,7 @@ type LineInfo struct {
 // GetAllLineInfo /api/line/get-all-line-info
 func GetAllLineInfo(w http.ResponseWriter, _ *http.Request) {
 	s := `SELECT line.line_id,line.fleet_id,captain.driver_id FROM line left join (SELECT line_id,driver_id from driver_line where position=1) as captain on captain.line_id=line.line_id`
-	db, err := sql.Open(DriverName, SqlConnectionPath)
+	db := DB
 	rows, err := db.Query(s)
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
@@ -129,11 +121,7 @@ func GetStopsAndBusByLineId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lineId := r.URL.Query().Get("line_id")
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	tx, err := db.Begin()
 	if err != nil {
 		if tx != nil {
@@ -232,10 +220,7 @@ func AddNewLine(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-	}
+	db := DB
 	s1 := `INSERT INTO line (line_id,fleet_id) values (?,?)`
 	s2 := `INSERT INTO line_stop (stop_id,line_id,stop_order) values(?,?,?)`
 	tx, err := db.Begin()
@@ -294,11 +279,7 @@ func GetLineMembersByLineId(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 
 	lineId := query.Get("line_id")
 	s := "SELECT driver.name,driver_line.driver_id,driver_line.position from driver_line inner join driver on driver.driver_id=driver_line.driver_id where driver_line.line_id=?"
@@ -339,11 +320,7 @@ func SetLineCaptain(w http.ResponseWriter, r *http.Request) {
 	if DecodePostForm(&scf, r, w) {
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	tx, err := db.Begin()
 	if err != nil {
 		if tx != nil {

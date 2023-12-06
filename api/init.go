@@ -1,15 +1,17 @@
 package api
 
-var SqlConnectionPath string
-var DriverName string
+import (
+	"database/sql"
+	_ "github.com/go-sql-driver/mysql"
+)
 
 type ResponseMsg struct {
 	Code string `json:"code"`
 	Msg  string `json:"msg"`
 }
 
-func SqlInit(address, port, dbName, username, password string) {
+var DB *sql.DB
 
-	SqlConnectionPath = username + ":" + password + "@(" + address + ":" + port + ")/" + dbName + "?parseTime=true"
-	DriverName = "mysql"
+func SqlInit(db *sql.DB) {
+	DB = db
 }

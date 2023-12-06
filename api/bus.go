@@ -18,11 +18,7 @@ type AllBusInfo struct {
 
 // GetAllBus /api/bus/get-all-bus
 func GetAllBus(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	s := `SELECT bus.bus_id,bus.line_id,line.fleet_id from bus inner join line on line.line_id=bus.line_id `
 	rows, err := db.Query(s)
 	if err != nil {
@@ -51,13 +47,12 @@ func AddOneBus(w http.ResponseWriter, r *http.Request) {
 	if DecodePostForm(&info, r, w) {
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
+	db := DB
+	s := `INSERT INTO bus (bus_id, line_id) VALUES (?,?)`
+	_, err := db.Exec(s, info.BusId, info.LineId)
 	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
 		return
 	}
-	s := `INSERT INTO bus (bus_id, line_id) VALUES (?,?)`
-	_, err = db.Exec(s, info.BusId, info.LineId)
 	m := ResponseMsg{}
 	if err != nil {
 		m.Msg = "插入失败,请检查车辆是否已经存在"

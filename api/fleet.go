@@ -11,11 +11,7 @@ type AllFleetId struct {
 }
 
 func GetAllFleets(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	query := `SELECT fleet_id from fleet`
 	rows, err := db.Query(query)
 	defer func(rows *sql.Rows) {
@@ -63,11 +59,7 @@ func SetFleetCaptain(w http.ResponseWriter, r *http.Request) {
 	if DecodePostForm(&scf, r, w) {
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	tx, err := db.Begin()
 	if err != nil {
 		if tx != nil {
@@ -121,11 +113,7 @@ func GetFleetLineMembersByFleetId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fleetId := r.URL.Query().Get("fleet_id")
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	var (
 		member   FleetMember
 		reply    FleetMemberReply

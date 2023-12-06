@@ -15,11 +15,7 @@ type AllViolationTypes struct {
 
 // GetAllViolationTypes GetViolationType /api/violation/types
 func GetAllViolationTypes(w http.ResponseWriter, _ *http.Request) {
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	s := `SELECT violation_type_id from violation_type`
 	rows, err := db.Query(s)
 	if err != nil {
@@ -65,11 +61,7 @@ func AddViolation(w http.ResponseWriter, r *http.Request) {
 		WriteJson(w, msg)
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	tx, err := db.Begin()
 	if err != nil {
 		if tx != nil {
@@ -168,11 +160,7 @@ func ViolationByTimeRangeAndDriverID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	driverId := query.Get("driver_id")
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	s := `SELECT time,violation_type_id from violation_record where time>=? AND time<? AND driver_id=?`
 	rows, err := db.Query(s, start, end, driverId)
 	if err != nil {
@@ -210,12 +198,8 @@ func ViolationStatByTimeRange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fleetId := query.Get("fleet_id")
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
-	s := `SELECT count(*),violation_type_id from violation_record where time>=? and time<? AND fleet_id=?`
+	db := DB
+	s := `SELECT count(*),violation_type_id from violation_record where time>=? and time<? AND fleet_id=? group by violation_type_id`
 	rows, err := db.Query(s, start, end, fleetId)
 	if err != nil {
 		HandleError(err, w, http.StatusInternalServerError)

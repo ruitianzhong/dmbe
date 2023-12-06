@@ -28,17 +28,13 @@ func AddDrivers(w http.ResponseWriter, r *http.Request) {
 	if DecodePostForm(&adf, r, w) {
 		return
 	}
-	db, err := sql.Open("mysql", SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	gender := 0
 	if adf.Gender == "male" {
 		gender = 1
 	}
 	query := `INSERT INTO driver (driver_id, name, year,sex,fleet_id,position,passwd) VALUES (?,?,?,?,?,?,?)`
-	_, err = db.Exec(query, adf.DriverId, adf.Name, adf.Year, gender, adf.FleetId, 0, "123456")
+	_, err := db.Exec(query, adf.DriverId, adf.Name, adf.Year, gender, adf.FleetId, 0, "123456")
 	// just temporary
 	m := ResponseMsg{}
 	if err != nil {
@@ -71,11 +67,7 @@ type AllDriverInfo struct {
 
 // GetAllDriverInfo /api/driver/get-all-driver-info
 func GetAllDriverInfo(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	s1 := `SELECT driver.driver_id,driver.name,driver.sex,driver.fleet_id,driver.position,driver.year,driver_line.line_id FROM driver left join driver_line on driver_line.driver_id=driver.driver_id`
 	rows, err := db.Query(s1)
 	if err != nil {
@@ -130,14 +122,13 @@ func GetFleetCaptainByDriverId(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	info := CaptainInfo{}
 	s1 := `SELECT driver_id,name from driver where fleet_id=(SELECT fleet_id from driver where driver_id=?) AND position=1`
-	err = db.QueryRow(s1, driverId).Scan(&info.DriverId, &info.Name)
+	err := db.QueryRow(s1, driverId).Scan(&info.DriverId, &info.Name)
+	if err != nil {
+		return
+	}
 	if err != nil {
 		HandleError(err, w, http.StatusOK)
 		info.Code = "100"
@@ -155,16 +146,12 @@ func GetLineCaptainByDriverId(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	info := CaptainInfo{}
 	s1 := `SELECT driver.driver_id,driver.name from driver 
         where driver.driver_id=(SELECT driver_line.driver_id from driver_line where driver_line.position=1 
         AND line_id=(SELECT line_id from driver_line where driver_id=?))`
-	err = db.QueryRow(s1, driverId).Scan(&info.DriverId, &info.Name)
+	err := db.QueryRow(s1, driverId).Scan(&info.DriverId, &info.Name)
 	if err != nil {
 		HandleError(err, w, http.StatusOK)
 		info.Code = "100"
@@ -200,11 +187,7 @@ func ModifyDriverInfo(w http.ResponseWriter, r *http.Request) {
 	if DecodePostForm(&mdf, r, w) {
 		return
 	}
-	db, err := sql.Open(DriverName, SqlConnectionPath)
-	if err != nil {
-		HandleError(err, w, http.StatusInternalServerError)
-		return
-	}
+	db := DB
 	tx, err := db.Begin()
 	if err != nil {
 		if tx != nil {
