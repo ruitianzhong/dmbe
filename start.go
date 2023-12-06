@@ -41,6 +41,7 @@ func main() {
 	r.HandleFunc("/api/line/set-fleet-captain", api.SetFleetCaptain).Methods("post")
 	r.HandleFunc("/api/fleet/get-fleet-members", api.GetFleetLineMembersByFleetId).Methods("get")
 	r.HandleFunc("/api/line/get-line-by-fleet-id", api.GetLineByFleetId).Methods(http.MethodGet)
+	r.HandleFunc("/api/fleet/get-all-fleet-detailed-info", api.GetAllFleetDetailedInfo).Methods(http.MethodGet)
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {

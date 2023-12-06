@@ -143,3 +143,47 @@ func GetFleetLineMembersByFleetId(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJson(w, reply)
 }
+
+type FleetInfo struct {
+	FleetId     string `json:"fleet_id"`
+	CaptainName string `json:"captain_name"`
+	CaptainId   string `json:"captain_id"`
+	HasCaptain  bool   `json:"has_captain"`
+}
+
+type DetailedFleetInfoReply struct {
+	FleetsInfo []FleetInfo `json:"fleets_info"`
+}
+
+// GetAllFleetDetailedInfo /api/fleet/get-all-fleet-detailed-info
+func GetAllFleetDetailedInfo(w http.ResponseWriter, r *http.Request) {
+	db := DB
+	s := `SELECT fleet.fleet_id,name,driver_id  from fleet left join (SELECT name,driver_id,fleet_id from driver where position=1) as temp on temp.fleet_id=fleet.fleet_id`
+	rows, err := db.Query(s)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+	di := DetailedFleetInfoReply{}
+	for rows.Next() {
+		var fi FleetInfo
+		var name, id sql.NullString
+		err = rows.Scan(&fi.FleetId, &name, &id)
+		if err != nil {
+			HandleError(err, w, http.StatusInternalServerError)
+			return
+		}
+		if name.Valid && id.Valid {
+			fi.CaptainName, fi.CaptainId = name.String, id.String
+			fi.HasCaptain = true
+		}
+		di.FleetsInfo = append(di.FleetsInfo, fi)
+	}
+
+	WriteJson(w, di)
+
+}
