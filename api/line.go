@@ -98,6 +98,8 @@ func GetAllLineInfo(w http.ResponseWriter, _ *http.Request) {
 		err := rows.Scan(&info.LineId, &info.LineFleetId, &ns)
 		if ns.Valid {
 			info.LineCaptain = ns.String
+		} else {
+			info.LineCaptain = ""
 		}
 		if err != nil {
 			HandleError(err, w, http.StatusInternalServerError)
@@ -361,4 +363,41 @@ func SetLineCaptain(w http.ResponseWriter, r *http.Request) {
 		msg.Msg = err.Error()
 	}
 	WriteJson(w, msg)
+}
+
+type QueriedLineInfo struct {
+	LineId []string `json:"line_id"`
+}
+
+// GetLineByFleetId /api/line/get-line-by-fleet-id
+func GetLineByFleetId(w http.ResponseWriter, r *http.Request) {
+	if !r.URL.Query().Has("fleet_id") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	fleetId := r.URL.Query().Get("fleet_id")
+	s := `SELECT line_id from line where fleet_id=?`
+	db := DB
+	rows, err := db.Query(s, fleetId)
+	if err != nil {
+		HandleError(err, w, http.StatusInternalServerError)
+		return
+	}
+	var lineId string
+	var info QueriedLineInfo
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
+
+	for rows.Next() {
+		err = rows.Scan(&lineId)
+		if err != nil {
+			HandleError(err, w, http.StatusInternalServerError)
+			return
+		}
+		info.LineId = append(info.LineId, lineId)
+	}
+
+	WriteJson(w, info)
+
 }
