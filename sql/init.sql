@@ -74,3 +74,6 @@ CREATE TABLE IF NOT EXISTS violation_record
     FOREIGN KEY (fleet_id) references fleet (fleet_id),
     FOREIGN KEY (stop_id) references stop (stop_id)
 );
+
+INSERT INTO fleet (fleet_id) values ('0');
+INSERT INTO driver (driver_id,name,year,sex,fleet_id,position,passwd) values ('root','Ruitian Zhong',2003,1,'0',0,'Your password');

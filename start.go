@@ -62,6 +62,10 @@ func initDb() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = DB.Ping()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	api.SqlInit(DB)
 	authentication.SqlInit(DB)
