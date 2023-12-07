@@ -110,3 +110,17 @@ func UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 	WriteJson(w, msg)
 
 }
+
+// CheckIfLogin /api/user/check-if-login
+func CheckIfLogin(w http.ResponseWriter, r *http.Request) {
+	msg := ResponseMsg{}
+	session, _ := cookieStore.Get(r, "dm-session")
+	auth, ok := session.Values["authenticated"].(bool)
+	if ok && auth {
+		msg.Code = "200"
+	} else {
+		msg.Code = "100"
+	}
+
+	WriteJson(w, msg)
+}
