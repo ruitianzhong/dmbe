@@ -33,3 +33,7 @@ func DecodePostForm(dst interface{}, r *http.Request, w http.ResponseWriter) boo
 	}
 	return false
 }
+
+func initCookieStore() {
+
+}

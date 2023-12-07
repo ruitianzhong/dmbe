@@ -6,6 +6,7 @@ import (
 	"dmbe/authentication"
 	"dmbe/config"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"log"
 	"net/http"
 )
@@ -15,7 +16,7 @@ var GlobalConfig *config.Config
 func main() {
 	GlobalConfig = config.InitConfig()
 	initDb()
-	authentication.InitAuthentication(GlobalConfig.Auth.SessionKey)
+	initCookieStore(GlobalConfig.Auth.SessionKey)
 	r := mux.NewRouter()
 	r.HandleFunc("/api/fleets/get-all-fleets", api.GetAllFleets).Methods("get")
 	r.HandleFunc("/api/drivers/add-drivers", api.AddDrivers).Methods("post")
@@ -42,6 +43,8 @@ func main() {
 	r.HandleFunc("/api/fleet/get-fleet-members", api.GetFleetLineMembersByFleetId).Methods("get")
 	r.HandleFunc("/api/line/get-line-by-fleet-id", api.GetLineByFleetId).Methods(http.MethodGet)
 	r.HandleFunc("/api/fleet/get-all-fleet-detailed-info", api.GetAllFleetDetailedInfo).Methods(http.MethodGet)
+	r.HandleFunc("/api/user/info", api.GetUserInfoByCookie).Methods(http.MethodGet)
+	r.HandleFunc("/api/usr/update-user-password", api.UpdateUserPassword).Methods(http.MethodPost)
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
@@ -68,4 +71,10 @@ func ConnectionDriverAndPath(address, port, dbName, username, password string) (
 	driverName = "mysql"
 	return driverName, sqlConnectionPath
 
+}
+
+func initCookieStore(sessionKey string) {
+	store := sessions.NewCookieStore([]byte(sessionKey))
+	api.InitCookieStore(store)
+	authentication.InitCookieStore(store)
 }

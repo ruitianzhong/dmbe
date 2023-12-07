@@ -11,16 +11,14 @@ import (
 
 var store *sessions.CookieStore
 var (
-	SqlConnectionPath string
-	DriverName        string
-	DB                *sql.DB
+	DB *sql.DB
 )
-
-func InitAuthentication(sessionKey string) {
-	store = sessions.NewCookieStore([]byte(sessionKey))
-}
 
 func SqlInit(db *sql.DB) {
 
 	DB = db
+}
+
+func InitCookieStore(s *sessions.CookieStore) {
+	store = s
 }

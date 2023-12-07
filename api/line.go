@@ -3,7 +3,6 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"net/http"
 )
@@ -207,7 +206,6 @@ func AddNewLine(w http.ResponseWriter, r *http.Request) {
 	l := r.ContentLength
 	body := make([]byte, l)
 	_, _ = r.Body.Read(body)
-	fmt.Println(string(body))
 	var anf AddNewLineForm
 	err := json.Unmarshal(body, &anf)
 	if err != nil {
@@ -236,7 +234,7 @@ func AddNewLine(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = tx.Exec(s1, anf.LineId, anf.FleetId)
 	if err != nil {
-		msg.Code = "200"
+		msg.Code = "100"
 		msg.Msg = "该路线已经存在，请保证路线名的唯一性"
 		WriteJson(w, msg)
 		_ = tx.Rollback()
