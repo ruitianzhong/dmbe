@@ -77,3 +77,4 @@ CREATE TABLE IF NOT EXISTS violation_record
 
 INSERT INTO fleet (fleet_id) values ('0');
 INSERT INTO driver (driver_id,name,year,sex,fleet_id,position,passwd) values ('root','Ruitian Zhong',2003,1,'0',0,'Your password');
+Insert into violation_type values ('闯红灯'),('超速'),('不礼让行人'),('不按规定按喇叭'),('不按车道行驶'),('在车厢没有关好时行车'),('接打电话');

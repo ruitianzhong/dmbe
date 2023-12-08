@@ -187,3 +187,27 @@ func GetAllFleetDetailedInfo(w http.ResponseWriter, r *http.Request) {
 	WriteJson(w, di)
 
 }
+
+type AddNewFleetForm struct {
+	FleetId string `schema:"fleet_id,required"`
+}
+
+// AddNewFleet /api/fleet/add-new-fleet
+func AddNewFleet(w http.ResponseWriter, r *http.Request) {
+	anf := AddNewFleetForm{}
+	if DecodePostForm(&anf, r, w) {
+		return
+	}
+	db := DB
+	s := `INSERT INTO fleet (fleet_id) values (?)`
+	_, err := db.Exec(s, anf.FleetId)
+	msg := ResponseMsg{}
+	if err != nil {
+		msg.Code = "100"
+		msg.Msg = "该车队已存在"
+	} else {
+		msg.Code = "200"
+
+	}
+	WriteJson(w, msg)
+}

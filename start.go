@@ -46,6 +46,7 @@ func main() {
 	r.HandleFunc("/api/user/info", api.GetUserInfoByCookie).Methods(http.MethodGet)
 	r.HandleFunc("/api/usr/update-user-password", api.UpdateUserPassword).Methods(http.MethodPost)
 	r.HandleFunc("/api/user/check-if-login", api.CheckIfLogin).Methods(http.MethodGet)
+	r.HandleFunc("/api/fleet/add-new-fleet", api.AddNewFleet).Methods(http.MethodPost)
 	r.Use(authentication.AuthMiddleware)
 	err := http.ListenAndServe(":"+GlobalConfig.App.Port, r)
 	if err != nil {
