@@ -50,9 +50,6 @@ func AddOneBus(w http.ResponseWriter, r *http.Request) {
 	db := DB
 	s := `INSERT INTO bus (bus_id, line_id) VALUES (?,?)`
 	_, err := db.Exec(s, info.BusId, info.LineId)
-	if err != nil {
-		return
-	}
 	m := ResponseMsg{}
 	if err != nil {
 		m.Msg = "插入失败,请检查车辆是否已经存在"

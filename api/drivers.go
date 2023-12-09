@@ -77,12 +77,12 @@ func GetAllDriverInfo(w http.ResponseWriter, r *http.Request) {
 	defer func(rows *sql.Rows) {
 		_ = rows.Close()
 	}(rows)
-	info := DriverInfo{}
 	all := AllDriverInfo{}
 	for rows.Next() {
+		info := DriverInfo{}
 		var gender, position int
-		var n_line_id sql.NullString
-		err = rows.Scan(&info.DriverId, &info.Name, &gender, &info.FleetId, &position, &info.Year, &n_line_id)
+		var nLineId sql.NullString
+		err = rows.Scan(&info.DriverId, &info.Name, &gender, &info.FleetId, &position, &info.Year, &nLineId)
 		if err != nil {
 			HandleError(err, w, http.StatusInternalServerError)
 			return
@@ -100,8 +100,8 @@ func GetAllDriverInfo(w http.ResponseWriter, r *http.Request) {
 			info.Position = "路线队长"
 			break
 		}
-		if n_line_id.Valid {
-			info.LineId = n_line_id.String
+		if nLineId.Valid {
+			info.LineId = nLineId.String
 		}
 		all.DriverInfo = append(all.DriverInfo, info)
 	}
