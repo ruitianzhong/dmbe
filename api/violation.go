@@ -128,6 +128,10 @@ func AddViolation(w http.ResponseWriter, r *http.Request) {
 type ViolationInfo struct {
 	ViolationTypeId string `json:"violation_type_id"`
 	Time            int64  `json:"time"`
+	BusId           string `json:"bus_id"`
+	StopId          string `json:"stop_id"`
+	FleetId         string `json:"fleet_id"`
+	LineId          string `json:"line_id"`
 }
 
 type ViolationReply struct {
@@ -161,7 +165,7 @@ func ViolationByTimeRangeAndDriverID(w http.ResponseWriter, r *http.Request) {
 	}
 	driverId := query.Get("driver_id")
 	db := DB
-	s := `SELECT time,violation_type_id from violation_record where time>=? AND time<? AND driver_id=?`
+	s := `SELECT time,violation_type_id,bus_id,stop_id,fleet_id,line_id from violation_record where time>=? AND time<? AND driver_id=?`
 	rows, err := db.Query(s, start, end, driverId)
 	if err != nil {
 		HandleError(err, w, http.StatusInternalServerError)
@@ -173,7 +177,7 @@ func ViolationByTimeRangeAndDriverID(w http.ResponseWriter, r *http.Request) {
 	var reply ViolationReply
 	var violation ViolationInfo
 	for rows.Next() {
-		err = rows.Scan(&violation.Time, &violation.ViolationTypeId)
+		err = rows.Scan(&violation.Time, &violation.ViolationTypeId, &violation.BusId, &violation.StopId, &violation.FleetId, &violation.LineId)
 		if err != nil {
 			HandleError(err, w, http.StatusInternalServerError)
 			return
