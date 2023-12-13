@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS driver
     position  int         NOT NULL,
     passwd    varchar(20) NOT NULL,
     FOREIGN KEY (fleet_id) REFERENCES fleet (fleet_id)
+    CHECK (sex in (0,1))
 );
+
 
 CREATE TABLE IF NOT EXISTS line
 (
@@ -78,3 +80,5 @@ CREATE TABLE IF NOT EXISTS violation_record
 INSERT INTO fleet (fleet_id) values ('0');
 INSERT INTO driver (driver_id,name,year,sex,fleet_id,position,passwd) values ('root','Ruitian Zhong',2003,1,'0',0,'Your password');
 Insert into violation_type values ('闯红灯'),('超速'),('不礼让行人'),('不按规定按喇叭'),('不按车道行驶'),('在车厢没有关好时行车'),('接打电话');
+CREATE INDEX violation_record_index on violation_record(time);
+CREATE INDEX violation_record_index_driver_id on violation_record(driver_id);
